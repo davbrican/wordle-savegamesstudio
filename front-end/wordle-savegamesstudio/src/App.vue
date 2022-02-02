@@ -49,12 +49,17 @@
     <div class="box input">
       <input v-model="value" type="text" maxlength="5" v-on:keyup.enter="loadData" id="myInput">
     </div>
-    {{resolution}}
+    <div class="box resolution">
+      <pre>{{resolution}}</pre>
+    </div>
   </div>
 </template>
 
 <script>
 import axios from 'axios';
+import VueSession from 'vue-session'
+import Vue from 'vue'
+Vue.use(VueSession)
 
 export default {
   data() {
@@ -87,7 +92,35 @@ export default {
       this.loaded = true;
     },
     firstLoading() {
-      
+      this.$session.start();
+      if (this.$session.get("sessionSaved")) {
+        this.letter = this.$session.get("letter");
+        this.text = this.$session.get("text");  
+        this.triesNumber = this.$session.get("triesNumber");
+        this.greens = this.$session.get("greens");
+        this.isCorrect = this.$session.get("isCorrect");
+        this.isDone = this.$session.get("isDone");
+        this.resolution = this.$session.get("resolution");
+      } else {
+        this.$session.set("letter", [["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                  ["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                  ["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                  ["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                  ["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                  ["letter-space","letter-space","letter-space","letter-space","letter-space"]]);
+          this.$session.set("text", [["","","","",""],
+                ["","","","",""],
+                ["","","","",""],
+                ["","","","",""],
+                ["","","","",""],
+                ["","","","",""]]);   
+          this.$session.set("triesNumber",0);
+          this.$session.set("greens",0);
+          this.$session.set("isCorrect",false);
+          this.$session.set("isDone",false);
+          this.$session.set("sessionSaved",true);
+          this.$session.set("resolution",'');
+      }
     },
     loadData() {
       if(this.greens < 5 && this.triesNumber < 6) {
@@ -120,7 +153,7 @@ export default {
                 this.letter[this.triesNumber][i] = "letter-bad";
               } else if (element == "verde") {
                 this.letter[this.triesNumber][i] = "letter-correct";
-                this.greens++;
+                this.greens += 1;
               } else if (element == "naranja") {
                 this.letter[this.triesNumber][i] = "letter-mid";
               }
@@ -130,16 +163,57 @@ export default {
               this.greens = 0;
               if (this.triesNumber == 5) {
                 this.isDone = true;
-                this.resolution = "HAS PERDIDO!";
+                this.resolution = "HAS PERDIDO...\n";
+                for (let l = 0; l < this.letter.length; l++) {
+                  const line = this.letter[l];
+                  for (let r = 0; r < line.length; r++) {
+                    const element = line[r];
+                    if (element == "letter-space") {
+                      this.resolution += "⚪";
+                    } else if (element == "letter-correct") {
+                      this.resolution += "🟢";
+                    } else if (element == "letter-mid") {
+                      this.resolution += "🟡";
+                    } else if (element == "letter-bad") {
+                      this.resolution += "⚫";
+                    }
+                  }
+                  this.resolution += "\n";
+                }
               }
             } else {
               this.isCorrect = true;
-                this.resolution = "HAS GANADO!";
+                this.resolution = "¡HAS GANADO!\n";
+                for (let l = 0; l < this.letter.length; l++) {
+                  const line = this.letter[l];
+                  for (let r = 0; r < line.length; r++) {
+                    const element = line[r];
+                    if (element == "letter-space") {
+                      this.resolution += "⚪";
+                    } else if (element == "letter-correct") {
+                      this.resolution += "🟢";
+                    } else if (element == "letter-mid") {
+                      this.resolution += "🟡";
+                    } else if (element == "letter-bad") {
+                      this.resolution += "⚫";
+                    }
+                  }
+                  this.resolution += "\n";
+                }
             }
 
 
             this.triesNumber++;
             this.loaded = true;
+
+            this.$session.set("letter", this.letter);
+            this.$session.set("text", this.text);   
+            this.$session.set("triesNumber",this.triesNumber);
+            this.$session.set("greens",this.greens);
+            this.$session.set("isCorrect",this.isCorrect);
+            this.$session.set("isDone",this.isDone);
+            this.$session.set("resolution",this.resolution);
+            this.$session.set("sessionSaved",true);
           })
           .catch((error) => {
             // eslint-disable-next-line
@@ -216,5 +290,12 @@ export default {
   border: 1px solid #ccc;
   border-radius: 4px;
   box-sizing: border-box;
+  font-size: 25px;
+  font-family: "Lucida Console";
+}
+pre {
+  font-size: 20px;
+  font-family: "Lucida Console";
+  font-weight: bold;
 }
 </style>
