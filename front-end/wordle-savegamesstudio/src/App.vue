@@ -46,10 +46,14 @@
       <div :class="letter[5][3]" @click="changeStyle(5,3)"><p class="text-inside">{{text[5][3]}}</p></div>
       <div :class="letter[5][4]" @click="changeStyle(5,4)"><p class="text-inside">{{text[5][4]}}</p></div>
     </div>
+    <div class="box input">
+      <input v-model="value" type="text" maxlength="5" v-on:keyup.enter="loadData" id="myInput">
+    </div>
   </div>
 </template>
 
 <script>
+import axios from 'axios';
 export default {
   data() {
     return {
@@ -65,7 +69,9 @@ export default {
             ["","","","",""],
             ["","","","",""],
             ["","","","",""],
-            ["","","","",""]]
+            ["","","","",""]],
+      triesNumber: 0,
+      value: ''
     }
   },
   methods: {
@@ -73,7 +79,52 @@ export default {
       this.loaded = false;
       this.letter[x][y] = "letter-correct";
       this.loaded = true;
-    }
+    },
+    loadData() {
+      var text = document.getElementById("myInput").value;
+      for (let j = 0; j < text.split("").length; j++) {
+        var element = text.split("")[j];
+        this.text[this.triesNumber][j] = element.toUpperCase();
+      }
+      const path = `http://localhost:8000/testWord`;
+      const config = {
+        method: 'post',
+        url: path,
+        data: {
+          "palabra": text,
+          "numero_intentos": this.triesNumber
+        },
+        headers: {
+          "Content-Type": "application/JSON",
+          "Access-Control-Allow-Origin": "*"
+        }
+      };
+      axios(config)
+        .then((res) => {
+          this.loaded = false;
+          var lista_resultados = res.data.result;
+
+          for (let i = 0; i < lista_resultados.length; i++) {
+            const element = lista_resultados[i];
+            if (element == "gris") {
+              this.letter[this.triesNumber][i] = "letter-space";
+            } else if (element == "verde") {
+              this.letter[this.triesNumber][i] = "letter-correct";
+            } else if (element == "naranja") {
+              this.letter[this.triesNumber][i] = "letter-mid";
+            }
+          }
+          this.triesNumber++;
+          this.loaded = true;
+        })
+        .catch((error) => {
+          // eslint-disable-next-line
+          console.error(error);
+        });
+    },
+  },
+  mounted() {
+    
   }
   
 };
@@ -120,5 +171,14 @@ export default {
   margin-top: -9px; 
   margin-left: -4px;
   font-family: "Lucida Console";
+}
+#myInput {
+  width: 20%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
 }
 </style>

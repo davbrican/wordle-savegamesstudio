@@ -19,7 +19,7 @@ def getDefault():
 def test_palabra(entrada, numero_intentos):
     res = []
     if numero_intentos < 6:
-        palabra = "spidey"
+        palabra = "juego"
         
         if len(entrada) != len(palabra):
             return "Tamaño de palabra incorrecto (tamaño correcto: "+str(len(palabra))+")"
