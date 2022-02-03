@@ -3,6 +3,8 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
 from flask_cors.core import try_match
 import os
+import json
+from datetime import datetime
 
 
 app = Flask(__name__)
@@ -19,7 +21,12 @@ def getDefault():
 def test_palabra(entrada, numero_intentos):
     res = []
     if numero_intentos < 6:
-        palabra = "juego"
+            
+        fecha_actual = datetime.today().strftime('%d/%m/%Y')
+        palabra = ""
+        with open('palabras.json', 'r') as f:
+            data = json.load(f)
+            palabra = data[fecha_actual]
         
         if len(entrada) != len(palabra):
             return "Tamaño de palabra incorrecto (tamaño correcto: "+str(len(palabra))+")"
@@ -60,7 +67,18 @@ def test_palabra(entrada, numero_intentos):
     else:
         return res
     
-    
+        
+#Create Workers Routes
+@app.route('/testNewWorld', methods=['GET'])
+def testNewWord():
+    #mysql data
+    fecha_actual = datetime.today().strftime('%d/%m/%Y')
+    palabra = ""
+    with open('palabras.json', 'r') as f:
+        data = json.load(f)
+        palabra = data[fecha_actual]
+    return jsonify({'result': palabra})
+
 #Create Workers Routes
 @app.route('/testWord', methods=['POST'])
 def testWord():

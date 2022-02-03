@@ -1,8 +1,12 @@
 <template>
   <div id="app">
     <div id="title">
-      <h3>WORDLE (SaveGamesStudio)</h3>
+      <h3>WORDLE Games</h3>
     </div>
+    <div class="box" style="margin-top: -55px">
+      <p>By Save Games Studio</p>
+    </div>
+      
     <br>
     <div class="box 1" v-if="loaded">
       <div :class="letter[0][0]"><p class="text-inside">{{text[0][0]}}</p></div>
@@ -47,11 +51,23 @@
       <div :class="letter[5][4]"><p class="text-inside">{{text[5][4]}}</p></div>
     </div>
     <div class="box input">
-      <input v-model="value" type="text" maxlength="5" v-on:keyup.enter="loadData" id="myInput">
+      <input v-model="value" type="text" maxlength="5" v-on:keyup.enter="loadData" id="myInput" placeholder="Introduce palabra">
     </div>
-    <div class="box resolution">
-      <pre>{{resolution}}</pre>
+    <div class="box r">
+      <pre id="resolution">{{resolution}}</pre>
     </div>
+    <div class="box r">
+      <pre id="resolution2">{{resolution2}}</pre>
+    </div>
+    
+    <button 
+        type="button"
+        v-clipboard:copy="resolution + resolution2"
+        v-clipboard:success="onCopy"
+        v-clipboard:error="onError"
+    >
+        Copy!
+    </button>
   </div>
 </template>
 
@@ -59,6 +75,9 @@
 import axios from 'axios';
 import VueSession from 'vue-session'
 import Vue from 'vue'
+import VueClipboard from 'vue-clipboard2'
+
+Vue.use(VueClipboard)
 Vue.use(VueSession)
 
 export default {
@@ -82,18 +101,42 @@ export default {
       greens: 0,
       isCorrect: false,
       isDone: false,
-      resolution: ''
+      correctWord: "",
+      newWord: "",
+      resolution: '',
+      resolution2: '',
+      stats: {
+        played: 0,
+        wins: 0,
+        distribution: {
+          "1": 0,
+          "2": 0,
+          "3": 0,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "X": 0
+        }
+      }
     }
   },
   methods: {
+    onCopy: function (e) {
+        alert('Acabas de copiar el siguiente texto en el portapapeles: ' + e.text)
+    },
+    onError: function (e) {
+        alert('No se pudo copiar el texto al portapapeles')
+        console.log(e);
+    },
     changeStyle(x,y) {
       this.loaded = false;
       this.letter[x][y] = "letter-correct";
       this.loaded = true;
     },
     firstLoading() {
-      this.$session.start();
+      this.$session.start();   
       if (this.$session.get("sessionSaved")) {
+        this.correctWord = this.$session.get("correctWord");
         this.letter = this.$session.get("letter");
         this.text = this.$session.get("text");  
         this.triesNumber = this.$session.get("triesNumber");
@@ -101,8 +144,60 @@ export default {
         this.isCorrect = this.$session.get("isCorrect");
         this.isDone = this.$session.get("isDone");
         this.resolution = this.$session.get("resolution");
+        this.resolution2 = this.$session.get("resolution2");
+        this.stats = this.$session.get("stats");
+
+        localStorage.stats = this.stats;
+        localStorage.correctWord = this.$session.get("correctWord");
+        localStorage.letter = this.$session.get("letter");
+        localStorage.text = this.$session.get("text");   
+        localStorage.triesNumber = this.$session.get("triesNumber");
+        localStorage.greens = this.$session.get("greens");
+        localStorage.isCorrect = this.$session.get("isCorrect");
+        localStorage.isDone = this.$session.get("isDone");
+        localStorage.resolution = this.$session.get("resolution");
+        localStorage.resolution2 = this.$session.get("resolution2");
+        localStorage.sessionSaved = this.$session.get("sessionSaved");
+
       } else {
-        this.$session.set("letter", [["letter-space","letter-space","letter-space","letter-space","letter-space"],
+        if (localStorage.sessionSaved) {
+          var lsLetter = []
+          var ind = 0;
+          for (let index = 0; index < localStorage.letter.split(",").length; index++) {
+            var auxLs= [];
+            for (let index2 = ind; index2 < ind+5; index2++) {
+              const element = localStorage.letter.split(",")[index2];
+              auxLs.push(element);
+            }
+            ind += 5;
+            lsLetter.push(auxLs);
+          }
+          this.letter = lsLetter;
+          
+          var lsText = []
+          var ind2 = 0;
+          for (let index = 0; index < localStorage.text.split(",").length; index++) {
+            var auxLs2= [];
+            for (let index2 = ind2; index2 < ind2+5; index2++) {
+              const element = localStorage.text.split(",")[index2];
+              auxLs2.push(element);
+            }
+            ind2 += 5;
+            lsText.push(auxLs2);
+          }
+          this.text = lsText;
+
+          this.correctWord = localStorage.correctWord;
+          this.triesNumber = localStorage.triesNumber;
+          this.greens = localStorage.greens;
+          this.isCorrect = localStorage.isCorrect;
+          this.isDone = localStorage.isDone;
+          this.resolution = localStorage.resolution;
+          this.resolution2 = localStorage.resolution2;
+          this.stats = localStorage.stats;
+        }
+        else {
+          this.$session.set("letter", [["letter-space","letter-space","letter-space","letter-space","letter-space"],
                   ["letter-space","letter-space","letter-space","letter-space","letter-space"],
                   ["letter-space","letter-space","letter-space","letter-space","letter-space"],
                   ["letter-space","letter-space","letter-space","letter-space","letter-space"],
@@ -120,7 +215,131 @@ export default {
           this.$session.set("isDone",false);
           this.$session.set("sessionSaved",true);
           this.$session.set("resolution",'');
+          this.$session.set("resolution2",'');
+          this.$session.set("correctWord",'');
+
+          this.$session.set("stats",{
+            played: 0,
+            wins: 0,
+            distribution: {
+              "1": 0,
+              "2": 0,
+              "3": 0,
+              "4": 0,
+              "5": 0,
+              "6": 0,
+              "X": 0
+            }
+          });
+
+          
+          localStorage.correctWord = this.$session.get("correctWord");
+          localStorage.letter = this.$session.get("letter");
+          localStorage.text = this.$session.get("text");   
+          localStorage.triesNumber = this.$session.get("triesNumber");
+          localStorage.greens = this.$session.get("greens");
+          localStorage.isCorrect = this.$session.get("isCorrect");
+          localStorage.isDone = this.$session.get("isDone");
+          localStorage.resolution = this.$session.get("resolution");
+          localStorage.resolution2 = this.$session.get("resolution2");
+          localStorage.sessionSaved = this.$session.get("sessionSaved");
+          localStorage.stats = {
+            played: 0,
+            wins: 0,
+            distribution: {
+              "1": 0,
+              "2": 0,
+              "3": 0,
+              "4": 0,
+              "5": 0,
+              "6": 0,
+              "X": 0
+            }
+          };
+        }
       }
+
+      axios({
+        method: 'get',
+        url: `http://localhost:8000/testNewWorld`,
+        data: {
+        },
+        headers: {
+          "Content-Type": "application/JSON",
+          "Access-Control-Allow-Origin": "*"
+        }
+      })
+      .then((res) => {
+        this.newWord = res.data.result;
+        if (this.correctWord != this.newWord) {
+          this.$session.set("letter", [["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                ["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                ["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                ["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                ["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                ["letter-space","letter-space","letter-space","letter-space","letter-space"]]);
+          this.$session.set("text", [["","","","",""],
+                ["","","","",""],
+                ["","","","",""],
+                ["","","","",""],
+                ["","","","",""],
+                ["","","","",""]]);   
+          this.$session.set("triesNumber",0);
+          this.$session.set("greens",0);
+          this.$session.set("isCorrect",false);
+          this.$session.set("isDone",false);
+          this.$session.set("sessionSaved",true);
+          this.$session.set("resolution",'');
+          this.$session.set("resolution2",'');
+          this.$session.set("correctWord",'');
+
+          this.letter = [["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                ["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                ["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                ["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                ["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                ["letter-space","letter-space","letter-space","letter-space","letter-space"]];
+          this.text = [["","","","",""],
+                ["","","","",""],
+                ["","","","",""],
+                ["","","","",""],
+                ["","","","",""],
+                ["","","","",""]];   
+          this.triesNumber = 0;
+          this.greens = 0;
+          this.isCorrect = false;
+          this.isDone = false;
+          this.sessionSaved = true;
+          this.resolution = '';
+          this.resolution2 = '';
+          this.correctWord = '';
+
+          localStorage.letter = [["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                ["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                ["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                ["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                ["letter-space","letter-space","letter-space","letter-space","letter-space"],
+                ["letter-space","letter-space","letter-space","letter-space","letter-space"]];
+          localStorage.text = [["","","","",""],
+                ["","","","",""],
+                ["","","","",""],
+                ["","","","",""],
+                ["","","","",""],
+                ["","","","",""]];   
+          localStorage.triesNumber = 0;
+          localStorage.greens = 0;
+          localStorage.isCorrect = false;
+          localStorage.isDone = false;
+          localStorage.sessionSaved = true;
+          localStorage.resolution = '';
+          localStorage.resolution2 = '';
+          localStorage.correctWord = '';
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  
     },
     loadData() {
       if(this.greens < 5 && this.triesNumber < 6) {
@@ -180,32 +399,51 @@ export default {
                   }
                   this.resolution += "\n";
                 }
+                this.resolution2 += "ESTADISTICAS\n";
+                this.stats.played += 1;
+                this.stats.distribution["X"] += 1;
+                this.resolution2 += "Jugadas: " + this.stats.played + "  Victorias: " + (100*this.stats.wins/this.stats.played) + "%";
+                this.resolution2 += "\nDISTRIBUCION\n";
+                for (const [key, value] of Object.entries(this.stats.distribution)) {
+                  if (key != 0) this.resolution2 += key + " -> "+ (100*parseInt(value)/this.stats.played) + "%\n";
+                }
               }
             } else {
               this.isCorrect = true;
-                this.resolution = "¡HAS GANADO!\n";
-                for (let l = 0; l < this.letter.length; l++) {
-                  const line = this.letter[l];
-                  for (let r = 0; r < line.length; r++) {
-                    const element = line[r];
-                    if (element == "letter-space") {
-                      this.resolution += "⚪";
-                    } else if (element == "letter-correct") {
-                      this.resolution += "🟢";
-                    } else if (element == "letter-mid") {
-                      this.resolution += "🟡";
-                    } else if (element == "letter-bad") {
-                      this.resolution += "⚫";
-                    }
+              this.correctWord = text.toLowerCase(),
+              this.resolution = "¡HAS GANADO!\n";
+              for (let l = 0; l < this.letter.length; l++) {
+                const line = this.letter[l];
+                for (let r = 0; r < line.length; r++) {
+                  const element = line[r];
+                  if (element == "letter-space") {
+                    this.resolution += "⚪";
+                  } else if (element == "letter-correct") {
+                    this.resolution += "🟢";
+                  } else if (element == "letter-mid") {
+                    this.resolution += "🟡";
+                  } else if (element == "letter-bad") {
+                    this.resolution += "⚫";
                   }
-                  this.resolution += "\n";
                 }
+                this.resolution += "\n";
+              }
+              this.resolution2 += "ESTADISTICAS\n";
+              this.stats.played += 1;
+              this.stats.wins += 1;
+              this.stats.distribution[(this.triesNumber+1)+""] += 1;
+              this.resolution2 += "Jugadas: " + this.stats.played + "  Victorias: " + (100*this.stats.wins/this.stats.played) + "%";
+              this.resolution2 += "\n\nDISTRIBUCION\n";
+              for (const [key, value] of Object.entries(this.stats.distribution)) {
+                if (key != 0) this.resolution2 += key + " -> "+ (100*parseInt(value)/this.stats.played) + "%\n";
+              }
             }
 
-
+            
             this.triesNumber++;
             this.loaded = true;
 
+            this.$session.set("correctWord", this.correctWord);
             this.$session.set("letter", this.letter);
             this.$session.set("text", this.text);   
             this.$session.set("triesNumber",this.triesNumber);
@@ -213,7 +451,21 @@ export default {
             this.$session.set("isCorrect",this.isCorrect);
             this.$session.set("isDone",this.isDone);
             this.$session.set("resolution",this.resolution);
+            this.$session.set("resolution2",this.resolution2);
             this.$session.set("sessionSaved",true);
+            this.$session.set("stats",this.stats);
+
+            localStorage.stats = this.$session.get("stats");
+            localStorage.correctWord = this.$session.get("correctWord");
+            localStorage.letter = this.$session.get("letter");
+            localStorage.text = this.$session.get("text");   
+            localStorage.triesNumber = this.$session.get("triesNumber");
+            localStorage.greens = this.$session.get("greens");
+            localStorage.isCorrect = this.$session.get("isCorrect");
+            localStorage.isDone = this.$session.get("isDone");
+            localStorage.resolution = this.$session.get("resolution");
+            localStorage.resolution2 = this.$session.get("resolution2");
+            localStorage.sessionSaved = this.$session.get("sessionSaved");
           })
           .catch((error) => {
             // eslint-disable-next-line
@@ -283,7 +535,7 @@ export default {
   font-family: "Lucida Console";
 }
 #myInput {
-  width: 20%;
+  width: 300px;
   padding: 12px 20px;
   margin: 8px 0;
   display: inline-block;
@@ -296,6 +548,11 @@ export default {
 pre {
   font-size: 20px;
   font-family: "Lucida Console";
+}
+#resolution {
   font-weight: bold;
+}
+#resolution2 {
+  text-align: center;
 }
 </style>
