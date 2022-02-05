@@ -6,7 +6,10 @@
     <div class="box" style="margin-top: -55px">
       <p>By Save Games Studio</p>
     </div>
-      
+    <div class="box">
+      <button style="background-color: transparent; border: 10px solid transparent; font-size: 30px;" type="button" @click="changeVisibilityHelp">❔</button>
+      <button style="background-color: transparent; border: 10px solid transparent; font-size: 30px;" type="button" @click="changeVisibilityStats">📈</button>
+    </div>
     <br>
     <div class="box 1" v-if="loaded">
       <div :class="letter[0][0]"><p class="text-inside">{{text[0][0]}}</p></div>
@@ -53,21 +56,68 @@
     <div class="box input">
       <input v-model="value" type="text" maxlength="5" v-on:keyup.enter="loadData" id="myInput" placeholder="Introduce palabra">
     </div>
-    <div class="box r">
-      <pre id="resolution">{{resolution}}</pre>
-    </div>
-    <div class="box r">
-      <pre id="resolution2">{{resolution2}}</pre>
+
+    
+    <div class="box" :id="visibilityStats">
+      <div class="overall">
+        <button type="button" @click="changeVisibilityStats">X</button>
+        <div class="box r">
+          <pre id="resolution">{{resolution}}</pre>
+        </div>
+        <pre id="resolution2">{{resolution2}}</pre>
+        <div class="box">
+        <button 
+            class="button"
+            type="button"
+            v-clipboard:copy="resolution + resolution2"
+            v-clipboard:success="onCopy"
+            v-clipboard:error="onError"
+        >
+            Copy!
+        </button>
+        </div>
+      </div>
     </div>
     
-    <button 
-        type="button"
-        v-clipboard:copy="resolution + resolution2"
-        v-clipboard:success="onCopy"
-        v-clipboard:error="onError"
-    >
-        Copy!
-    </button>
+    
+    <div class="box" :id="visibilityHelp">
+      <div class="overall" style="height: 720px;">
+        <button type="button" @click="changeVisibilityHelp">X</button>
+        <div class="box">
+          <strong><p style="font-size: 25px; font-family: 'Lucida Console';">CÓMO JUGAR</p></strong>
+        </div>
+        <p style="margin-left: 20px;">Adivina la palabra oculta en seis intentos.</p>
+        <p style="margin-left: 20px;">La palabra oculta estará relacionada con temática gaming.</p>
+        <p style="margin-left: 20px;">Cada intento debe ser una palabra válida de 5 letras.</p>
+        <p style="margin-left: 20px;">Después de cada intento el color de las letras cambia para mostrar qué tan cerca estás de acertar la palabra.</p>
+        <strong><p style="margin-left: 20px;">Ejemplo</p></strong>
+        <div class="box" v-if="loaded">
+          <div class="letter-correct"><p class="text-inside">L</p></div>
+          <div class="letter-space"><p class="text-inside">E</p></div>
+          <div class="letter-space"><p class="text-inside">T</p></div>
+          <div class="letter-space"><p class="text-inside">R</p></div>
+          <div class="letter-space"><p class="text-inside">A</p></div>
+        </div>
+            <p style="margin-left: 20px;">La letra <strong>L</strong> está en la palabra y en la posición correcta.</p>
+        <div class="box" v-if="loaded">
+          <div class="letter-space"><p class="text-inside">M</p></div>
+          <div class="letter-space"><p class="text-inside">U</p></div>
+          <div class="letter-mid"><p class="text-inside">N</p></div>
+          <div Class="letter-space"><p class="text-inside">D</p></div>
+          <div class="letter-space"><p class="text-inside">O</p></div>
+        </div>
+            <p style="margin-left: 20px;">La letra <strong>N</strong> está en la palabra pero en la posición incorrecta.</p>
+        <div class="box" v-if="loaded">
+          <div class="letter-space"><p class="text-inside">D</p></div>
+          <div class="letter-space"><p class="text-inside">E</p></div>
+          <div class="letter-space"><p class="text-inside">D</p></div>
+          <div class="letter-space"><p class="text-inside">O</p></div>
+          <div class="letter-bad"><p class="text-inside">S</p></div>
+        </div>
+        <p style="margin-left: 20px;">La letra <strong>S</strong> no está en la palabra.</p>
+        <p style="margin-left: 20px;">Puede haber letras repetidas. Las pistas son independientes para cada letra.</p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -103,8 +153,8 @@ export default {
       isDone: false,
       correctWord: "",
       newWord: "",
-      resolution: '',
-      resolution2: '',
+      resolution: "Palabra sin resolver",
+      resolution2: "",
       stats: {
         played: 0,
         wins: 0,
@@ -117,10 +167,20 @@ export default {
           "6": 0,
           "X": 0
         }
-      }
+      },
+      visibilityHelp: "visibility-hidden",
+      visibilityStats: "visibility-hidden",
     }
   },
   methods: {
+    changeVisibilityHelp() {
+      if (this.visibilityHelp == "visibility-visible") this.visibilityHelp = "visibility-hidden";
+      else this.visibilityHelp = "visibility-visible";
+    },
+    changeVisibilityStats() {
+      if (this.visibilityStats == "visibility-visible") this.visibilityStats = "visibility-hidden";
+      else this.visibilityStats = "visibility-visible";
+    },
     onCopy: function (e) {
         alert('Acabas de copiar el siguiente texto en el portapapeles: ' + e.text)
     },
@@ -214,8 +274,8 @@ export default {
           this.$session.set("isCorrect",false);
           this.$session.set("isDone",false);
           this.$session.set("sessionSaved",true);
-          this.$session.set("resolution",'');
-          this.$session.set("resolution2",'');
+          this.$session.set("resolution","Palabra sin resolver");
+          this.$session.set("resolution2","");
           this.$session.set("correctWord",'');
 
           this.$session.set("stats",{
@@ -289,8 +349,8 @@ export default {
           this.$session.set("isCorrect",false);
           this.$session.set("isDone",false);
           this.$session.set("sessionSaved",true);
-          this.$session.set("resolution",'');
-          this.$session.set("resolution2",'');
+          this.$session.set("resolution","Palabra sin resolver");
+          this.$session.set("resolution2","");
           this.$session.set("correctWord",'');
 
           this.letter = [["letter-space","letter-space","letter-space","letter-space","letter-space"],
@@ -310,8 +370,7 @@ export default {
           this.isCorrect = false;
           this.isDone = false;
           this.sessionSaved = true;
-          this.resolution = '';
-          this.resolution2 = '';
+          this.resolution = "Palabra sin resolver";
           this.correctWord = '';
 
           localStorage.letter = [["letter-space","letter-space","letter-space","letter-space","letter-space"],
@@ -331,15 +390,14 @@ export default {
           localStorage.isCorrect = false;
           localStorage.isDone = false;
           localStorage.sessionSaved = true;
-          localStorage.resolution = '';
-          localStorage.resolution2 = '';
+          localStorage.resolution = "Palabra sin resolver";
+          
           localStorage.correctWord = '';
         }
       })
       .catch((error) => {
         console.error(error);
       });
-  
     },
     loadData() {
       if(this.greens < 5 && this.triesNumber < 6) {
@@ -402,11 +460,12 @@ export default {
                 this.resolution2 += "ESTADISTICAS\n";
                 this.stats.played += 1;
                 this.stats.distribution["X"] += 1;
-                this.resolution2 += "Jugadas: " + this.stats.played + "  Victorias: " + (100*this.stats.wins/this.stats.played) + "%";
+                this.resolution2 += "Jugadas: " + this.stats.played + "  Victorias: " + ((100*this.stats.wins/this.stats.played).toFixed(2)) + "%";
                 this.resolution2 += "\nDISTRIBUCION\n";
                 for (const [key, value] of Object.entries(this.stats.distribution)) {
-                  if (key != 0) this.resolution2 += key + " -> "+ (100*parseInt(value)/this.stats.played) + "%\n";
+                  if (key != 0) this.resolution2 += key + " -> "+ ((100*parseInt(value)/this.stats.played).toFixed(2)) + "%\n";
                 }
+                this.visibility = "visibility-visible";
               }
             } else {
               this.isCorrect = true;
@@ -432,13 +491,20 @@ export default {
               this.stats.played += 1;
               this.stats.wins += 1;
               this.stats.distribution[(this.triesNumber+1)+""] += 1;
-              this.resolution2 += "Jugadas: " + this.stats.played + "  Victorias: " + (100*this.stats.wins/this.stats.played) + "%";
+              this.resolution2 += "Jugadas: " + this.stats.played + "  Victorias: " + ((100*this.stats.wins/this.stats.played).toFixed(2)) + "%";
               this.resolution2 += "\n\nDISTRIBUCION\n";
               for (const [key, value] of Object.entries(this.stats.distribution)) {
-                if (key != 0) this.resolution2 += key + " -> "+ (100*parseInt(value)/this.stats.played) + "%\n";
+                if (key != 0) this.resolution2 += key + " -> "+ ((100*parseInt(value)/this.stats.played).toFixed(2)) + "%\n";
               }
+              this.visibility = "visibility-visible";
             }
 
+            /*
+            <meter min="0" max="100"
+            low="30" high="50"
+            optimum="70" 
+            value="{{pokemon.velocidad}}">
+            */
             
             this.triesNumber++;
             this.loaded = true;
@@ -554,5 +620,43 @@ pre {
 }
 #resolution2 {
   text-align: center;
+}
+.overall {
+  position:absolute;
+  background-color: rgb(255, 255, 255);
+  border-radius: 10px;
+  box-shadow: 0px 0px 3px 1px rgb(160, 161, 161);
+  margin-top: -400px;
+  width: 400px;
+  height: 630px;
+}
+#visibility-visible{
+  visibility: visible;
+}
+#visibility-hidden{
+  visibility: hidden;
+}
+
+.button {
+  display: inline-block;
+  padding: 12px 20px;
+  font-size: 24px;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  outline: none;
+  color: #000;
+  background-color: #e4ca59;
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 9px #999;
+}
+
+.button:hover {background-color: #b6a041}
+
+.button:active {
+  background-color: #e4ca59;
+  box-shadow: 0 5px #666;
+  transform: translateY(4px);
 }
 </style>
